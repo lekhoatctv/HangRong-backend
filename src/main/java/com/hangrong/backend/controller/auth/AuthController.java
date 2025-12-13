@@ -4,6 +4,7 @@ import com.hangrong.backend.dto.LoginRequest;
 import org.springframework.web.bind.annotation.*;
 import com.hangrong.backend.repository.UserRepository;
 import com.hangrong.backend.model.User;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @RestController
 @RequestMapping("/auth")
@@ -11,15 +12,21 @@ import com.hangrong.backend.model.User;
 public class AuthController {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthController(UserRepository userRepository) {
+    public AuthController(UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/login")
     public String login(@RequestBody LoginRequest request) {
+
         return userRepository.findByUsername(request.getUsername())
-                .filter(u -> u.getPassword().equals(request.getPassword()))
+                .filter(u -> passwordEncoder.matches(
+                        request.getPassword(),
+                        u.getPassword()))
                 .map(u -> "OK")
                 .orElse("FAIL");
     }
@@ -33,7 +40,7 @@ public class AuthController {
 
         User user = new User();
         user.setUsername(request.getUsername());
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         userRepository.save(user);
 
         return "OK";
