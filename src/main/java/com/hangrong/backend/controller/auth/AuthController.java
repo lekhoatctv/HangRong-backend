@@ -54,18 +54,25 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public String register(@RequestBody LoginRequest request) {
+    public Map<String, Object> register(@RequestBody LoginRequest request) {
+
+        Map<String, Object> res = new HashMap<>();
 
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            return "EXISTS";
+            res.put("success", false);
+            res.put("message", "Username already exists");
+            return res;
         }
 
         User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+
         userRepository.save(user);
 
-        return "OK";
+        res.put("success", true);
+        res.put("message", "Register successful");
+        return res;
     }
 
     /**
@@ -78,7 +85,9 @@ public class AuthController {
     public Map<String, Object> me(HttpServletRequest request) {
 
         // Lấy thông tin user từ JWT filter đã set vào request
-        Long userId = (Long) request.getAttribute("userId");
+        // JWT lưu userId dưới dạng Integer, không phải Long
+        Object userIdObj = request.getAttribute("userId");
+        Long userId = userIdObj instanceof Integer ? ((Integer) userIdObj).longValue() : (Long) userIdObj;
         String username = (String) request.getAttribute("username");
 
         Map<String, Object> result = new HashMap<>();
