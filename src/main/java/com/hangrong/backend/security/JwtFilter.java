@@ -18,14 +18,24 @@ public class JwtFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getRequestURI();
+        String method = request.getMethod();
 
-        System.out.println("JwtFilter checking path: " + path); // Debug log
+        System.out.println("JwtFilter checking path: " + path + " method: " + method); // Debug log
 
-        // ✅ CHỈ BỎ QUA login và register - KHÔNG bypass /auth/me
+        // ✅ BỎ QUA OPTIONS request (CORS preflight)
+        if ("OPTIONS".equalsIgnoreCase(method)) {
+            System.out.println("Bypassing JWT filter for OPTIONS request");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // ✅ CHỈ BỎ QUA login, register và public endpoints
         if (path.equals("/auth/login") ||
                 path.equals("/auth/register") ||
+                path.equals("/hello") ||
                 path.equals("/") ||
-                path.startsWith("/error")) {
+                path.startsWith("/error") ||
+                path.endsWith("/favicon.ico")) {
             System.out.println("Bypassing JWT filter for: " + path);
             filterChain.doFilter(request, response);
             return;
